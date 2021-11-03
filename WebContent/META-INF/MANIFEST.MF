@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: 
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+
