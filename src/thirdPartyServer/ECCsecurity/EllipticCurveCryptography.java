@@ -37,13 +37,14 @@ public class EllipticCurveCryptography {
 		privateKey = null;
 		publicKey = null;
 	}*/
-	
+	 
 	/* Transform a byte array in an hexadecimal string */
 	private static String toHex(byte[] data) {
 		StringBuilder sb = new StringBuilder();
 		for (byte b: data) {
 			sb.append(String.format("%02x", b&0xff));
 		}
+		 System.out.println("Nguyen Gia Duoc ");
 		return sb.toString();
 	}
 	
