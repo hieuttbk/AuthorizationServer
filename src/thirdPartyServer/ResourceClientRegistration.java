@@ -270,11 +270,15 @@ public class ResourceClientRegistration extends HttpServlet {
 
 					// Retrieve the tokenID from the table ACCESS_TOKEN
 					String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					
+					
+
 					// Retrieve the parameter not_after from the table ACCESS_TOKEN
 					java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
 					// Generate the key Kt and the Ticket
 					String[] dataResp = EllipticCurveCryptography
-							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr).split("\\|");
+							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp).split("\\|");
 					String ET = dataResp[0];
 					String Kt = dataResp[1];
 					String n = dataResp[2];
@@ -583,6 +587,7 @@ public class ResourceClientRegistration extends HttpServlet {
 	public String retrieveTokenIDinACCESS_TOKEN(Connection conn, String clientID, String reqResName,
 			String reqSubType) {
 		String tokenID = null;
+		// String Texp = null;
 		System.out.println("Retrieving TokenID corresponding to clientID and requested resource name and subscription"
 				+ " type from the table ACCESS_TOKEN...");
 		String sql = "SELECT token_id FROM ACCESS_TOKEN WHERE token_name = ? AND audience = ? AND sub_type = ?";
@@ -594,12 +599,36 @@ public class ResourceClientRegistration extends HttpServlet {
 			ResultSet rs = pstmt.executeQuery();
 			while (rs.next()) {
 				tokenID = rs.getString("token_id");
+				// Texp=rs.getString("validity_interval");
 			}
 		} catch (SQLException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		return tokenID;
+	}
+
+	public String retrieveTexpinACCESS_TOKEN(Connection conn, String clientID, String reqResName, String reqSubType) {
+		String Texp = null;
+		// String Texp = null;
+		System.out.println("Retrieving Texp corresponding to clientID and requested resource name and subscription"
+				+ " type from the table ACCESS_TOKEN...");
+		String sql = "SELECT validity_interval FROM ACCESS_TOKEN WHERE token_name = ? AND audience = ? AND sub_type = ?";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, reqResName);
+			pstmt.setString(2, clientID);
+			pstmt.setString(3, reqSubType);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Texp = rs.getString("validity_interval");
+				// Texp=rs.getString("validity_interval");
+			}
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		return Texp;
 	}
 
 	// Retrieve audience corresponding to reqResName and reqSubType in the table
