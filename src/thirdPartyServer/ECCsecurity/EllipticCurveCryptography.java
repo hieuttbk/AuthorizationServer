@@ -432,10 +432,9 @@ public class EllipticCurveCryptography {
 		byte[] n2 = new byte[ServerConstants.nonceSize];
 		random.nextBytes(n2); // Fill the nonce with random bytes
 		System.out.println("nonce2 = " + toHex(n2));
-		String KrString=toHex(Kr);
-		System.out.println("Krticket: "+KrString);
+		System.out.println("Krticket = " + toHex(hexStringToByteArray(Kr)));//kr kieu hexstring
 		CCMBlockCipher ccm1 = new CCMBlockCipher(new AESEngine());
-		ccm1.init(true, new ParametersWithIV(new KeyParameter(hexStringToByteArray(KrString)), n2));
+		ccm1.init(true, new ParametersWithIV(new KeyParameter(hexStringToByteArray(Kr)), n2));
 		byte[] ET = new byte[ticket.length + 8];
 		int len2 = ccm1.processBytes(ticket, 0, ticket.length, ET, 0);
 		try {
