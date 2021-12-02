@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.bouncycastle.math.ec.ECPoint;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -108,14 +110,12 @@ public class ResourceClientRegistration extends HttpServlet {
 
 		// Decrypt the application specific data and the random number c
 		String[] dataReq = EllipticCurveCryptography.resourceRegistrationReq(Tr, sub, nonce, encodeZ).split("\\|");
-		
-		
+
 		String reqResName = dataReq[0];
 		String reqSubType = dataReq[1];
 		String c = dataReq[2];
 		String clientID = dataReq[3];
 		String Kr = dataReq[4];
-		
 
 		// Check if the client has already passed the ECQV registration
 		Connection conn = (Connection) getServletContext().getAttribute("DBConnection");
@@ -135,18 +135,6 @@ public class ResourceClientRegistration extends HttpServlet {
 			 * dataReq[1]; String c = dataReq[2];
 			 */
 
-			// check If Kr respone == kr DAS created
-			System.out.println("ClientID by DAS: "+ clientID);
-			System.out.println("Tr by DAS: "+ Tr);
-			String KrByDAS = EllipticCurveCryptography.CreatedKr(clientID, Tr);
-			System.out.println("Kr is created by DAS: "+ KrByDAS);
-			System.out.println("Kr is created by Client: "+ Kr);
-			if(Kr.equals(KrByDAS)) {
-				System.out.println("Check Kr is succesful! ");
-			}else {
-				System.out.println("Check Kr is fail! ");
-			}
-			
 			// Validity days and costs according to the requested subscription type
 			int days = 0;
 			int cost = 0;
@@ -186,77 +174,23 @@ public class ResourceClientRegistration extends HttpServlet {
 				response.getWriter().write("Invalid combination of resource name and subscription type!!");
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			} else {
-				// If the combination reqResName-reqSubType exists, then retrieve the tokenID
-				// corresponding to
-				// the clientID as audience in ACCESS_TOKEN
-				String tokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
-				// If tokenID == null, then we need to retrieve the audience corresponding to
-				// the requested combination
-				// of resource name and subscription type from the table ACCESS_TOKEN
-				if (tokenID == null) {
-					String audience = retrieveAudienceInACCESS_TOKEN(conn, reqResName, reqSubType);
-					// If audience == null, then this is the first client interested in the
-					// requested
-					// combination of resource name and subscription type in the table ACCESS_TOKEN
+				// check If Kr respone == kr DAS created
+				String KrByDAS = EllipticCurveCryptography.CreatedKr(clientID, Tr);
+				if (Kr.equals(KrByDAS)) {
+					System.out.println("Check Kr is succesful! ");
 
-					// Compute the current date for the access token
-					java.util.Date date = new java.util.Date();
-					long now = date.getTime();
-					java.sql.Date notBefore = new java.sql.Date(now);
-					System.out.println("SQL start data: " + notBefore.toString());
-					// Compute the expiration date for the access token
-					Calendar cal = Calendar.getInstance();
-					cal.setTime(notBefore);
-					cal.add(Calendar.DATE, days);
-					java.sql.Date notAfter = new java.sql.Date(cal.getTimeInMillis());
-					System.out.println("SQL end data: " + notAfter.toString());
-					if (audience == null) {
-						// Check if the client has already a different subscription for the same
-						// resource name by retrieving
-						// the tokenID
-						String alreadySubTokenID = checkClientIDsubscriptionInACCESS_TOKEN(conn, clientID, reqResName);
-						if (alreadySubTokenID != null) {
-							// Delete issuer, not_before, not_after, audience corresponding to the retrieved
-							// tokenID in the
-							// table ACCESS_TOKEN
-							deleteFieldsCorrespondingToTokenIDinACCESS_TOKEN(conn, alreadySubTokenID);
-						}
-						// Update the record corresponding to the requested resource name and
-						// subscription type in
-						// the table ACCESS_TOKEN by setting audience, not_before and note_after.
-						updateACCESS_TOKENwithNotBeforeNotAfterAudience(conn, notBefore, notAfter, clientID, reqResName,
-								reqSubType);
-					} else {
-						// The requested token is already in use by another client, therefore we need to
-						// create
-						// another token in the table ACCESS_TOKEN with different token_id and audience
-						// parameter.
-						// Compute the new tokenID to insert in the table ACCESS_TOKEN
-						Random rnd = new Random();
-						tokenID = "T" + Integer.toString(rnd.nextInt(0X1000000), 16);
-						insertACCESS_TOKEN(conn, tokenID, notBefore, notAfter, reqResName, clientID, reqSubType, cost,
-								days);
-					}
-				} else {
-					// If tokenID != null for the client, then retrieve its expiration date from the
-					// table ACCESS_TOKEN
-					// to verify if it is still valid
-					java.sql.Date expirationDate = retrieveNotAfterFromACCESS_TOKEN(conn, tokenID);
-					// Compute current date
-					java.util.Date newDate = new java.util.Date();
-					long newTime = newDate.getTime();
-					java.sql.Date currentDate = new java.sql.Date(newTime);
-					if (currentDate.before(expirationDate)) {
-						msgInfo = "The client has already an access token for the requested resource"
-								+ " name and subscription type!!";
-						/*
-						 * response.getWriter().
-						 * write("The client has already an access token for the requested resource" +
-						 * " name and subscription type!!");
-						 */
-					} else {
-						// Update the record corresponding to the tokenID with the new validity period
-						// in the table ACCESS_TOKEN.
+					// If the combination reqResName-reqSubType exists, then retrieve the tokenID
+					// corresponding to
+					// the clientID as audience in ACCESS_TOKEN
+					String tokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					// If tokenID == null, then we need to retrieve the audience corresponding to
+					// the requested combination
+					// of resource name and subscription type from the table ACCESS_TOKEN
+					if (tokenID == null) {
+						String audience = retrieveAudienceInACCESS_TOKEN(conn, reqResName, reqSubType);
+						// If audience == null, then this is the first client interested in the
+						// requested
+						// combination of resource name and subscription type in the table ACCESS_TOKEN
 
 						// Compute the current date for the access token
 						java.util.Date date = new java.util.Date();
@@ -269,55 +203,252 @@ public class ResourceClientRegistration extends HttpServlet {
 						cal.add(Calendar.DATE, days);
 						java.sql.Date notAfter = new java.sql.Date(cal.getTimeInMillis());
 						System.out.println("SQL end data: " + notAfter.toString());
+						if (audience == null) {
+							// Check if the client has already a different subscription for the same
+							// resource name by retrieving
+							// the tokenID
+							String alreadySubTokenID = checkClientIDsubscriptionInACCESS_TOKEN(conn, clientID,
+									reqResName);
+							if (alreadySubTokenID != null) {
+								// Delete issuer, not_before, not_after, audience corresponding to the retrieved
+								// tokenID in the
+								// table ACCESS_TOKEN
+								deleteFieldsCorrespondingToTokenIDinACCESS_TOKEN(conn, alreadySubTokenID);
+							}
+							// Update the record corresponding to the requested resource name and
+							// subscription type in
+							// the table ACCESS_TOKEN by setting audience, not_before and note_after.
+							updateACCESS_TOKENwithNotBeforeNotAfterAudience(conn, notBefore, notAfter, clientID,
+									reqResName, reqSubType);
+						} else {
+							// The requested token is already in use by another client, therefore we need to
+							// create
+							// another token in the table ACCESS_TOKEN with different token_id and audience
+							// parameter.
+							// Compute the new tokenID to insert in the table ACCESS_TOKEN
+							Random rnd = new Random();
+							tokenID = "T" + Integer.toString(rnd.nextInt(0X1000000), 16);
+							insertACCESS_TOKEN(conn, tokenID, notBefore, notAfter, reqResName, clientID, reqSubType,
+									cost, days);
+						}
+					} else {
+						// If tokenID != null for the client, then retrieve its expiration date from the
+						// table ACCESS_TOKEN
+						// to verify if it is still valid
+						java.sql.Date expirationDate = retrieveNotAfterFromACCESS_TOKEN(conn, tokenID);
+						// Compute current date
+						java.util.Date newDate = new java.util.Date();
+						long newTime = newDate.getTime();
+						java.sql.Date currentDate = new java.sql.Date(newTime);
+						if (currentDate.before(expirationDate)) {
+							msgInfo = "The client has already an access token for the requested resource"
+									+ " name and subscription type!!";
+							/*
+							 * response.getWriter().
+							 * write("The client has already an access token for the requested resource" +
+							 * " name and subscription type!!");
+							 */
+						} else {
+							// Update the record corresponding to the tokenID with the new validity period
+							// in the table ACCESS_TOKEN.
 
-						updateACCESS_TOKENwithNotBeforeAndNotAfter(conn, tokenID, notBefore, notAfter);
+							// Compute the current date for the access token
+							java.util.Date date = new java.util.Date();
+							long now = date.getTime();
+							java.sql.Date notBefore = new java.sql.Date(now);
+							System.out.println("SQL start data: " + notBefore.toString());
+							// Compute the expiration date for the access token
+							Calendar cal = Calendar.getInstance();
+							cal.setTime(notBefore);
+							cal.add(Calendar.DATE, days);
+							java.sql.Date notAfter = new java.sql.Date(cal.getTimeInMillis());
+							System.out.println("SQL end data: " + notAfter.toString());
+
+							updateACCESS_TOKENwithNotBeforeAndNotAfter(conn, tokenID, notBefore, notAfter);
+						}
 					}
+
+					// Retrieve the tokenID from the table ACCESS_TOKEN
+					String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					// Retrieve the parameter not_after from the table ACCESS_TOKEN
+					java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
+					// Generate the key Kt and the Ticket
+					String[] dataResp = EllipticCurveCryptography
+							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr).split("\\|");
+					String ET = dataResp[0];
+					String Kt = dataResp[1];
+					String n = dataResp[2];
+					String n2 = dataResp[3];
+
+					// Prepare the response with the ticket to be sent to the client
+					JsonObject jsonRespBody = new JsonObject();
+					jsonRespBody.addProperty("ET", ET);
+					jsonRespBody.addProperty("nonce2", n2);
+					if (msgInfo != null) {
+						jsonRespBody.addProperty("message", msgInfo);
+					}
+					Gson gson = new GsonBuilder().create();
+					String respBody = gson.toJson(jsonRespBody);
+
+					System.out.println("Response body: " + respBody);
+
+					// Prepare the https request to send security credentials to the OM2M IPE in
+					// order to be able
+					// to authenticate the client (Use the javax.net.ssl).
+
+					// Create the json body for the request
+					JsonObject jsonReqOM2M = new JsonObject();
+					jsonReqOM2M.addProperty("symmetricKey", Kt);
+					jsonReqOM2M.addProperty("nonce", n);
+					jsonReqOM2M.addProperty("random", c);
+					jsonReqOM2M.addProperty("Texp", notAfter.toString());
+					String reqOM2MBody = gson.toJson(jsonReqOM2M);
+					System.out.println("Send credentials: " + reqOM2MBody);
+
+					// Create the SSLSocketFactory with keystore and truststore
+					httpsRun(reqOM2MBody);
+
+					// Send the ticket back to the client
+					if (response.getStatus() != HttpServletResponse.SC_BAD_REQUEST
+							&& response.getStatus() != HttpServletResponse.SC_UNAUTHORIZED) {
+						response.getWriter().write(respBody);
+						response.setStatus(HttpServletResponse.SC_OK);
+					}
+				} else {
+					System.out.println("Check Kr is fail! ");
 				}
-
-				// Retrieve the tokenID from the table ACCESS_TOKEN
-				String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
-				// Retrieve the parameter not_after from the table ACCESS_TOKEN
-				java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
-				// Generate the key Kt and the Ticket
-				String[] dataResp = EllipticCurveCryptography.resourceRegistrationResp(clientID, DBtokenID, reqResName)
-						.split("\\|");
-				String ticket = dataResp[0];
-				String Kt = dataResp[1];
-				String n = dataResp[2];
-
-				// Prepare the response with the ticket to be sent to the client
-				JsonObject jsonRespBody = new JsonObject();
-				jsonRespBody.addProperty("ticket", ticket);
-				if (msgInfo != null) {
-					jsonRespBody.addProperty("message", msgInfo);
-				}
-				Gson gson = new GsonBuilder().create();
-				String respBody = gson.toJson(jsonRespBody);
-
-				System.out.println("Response body: " + respBody);
-
-				// Prepare the https request to send security credentials to the OM2M IPE in
-				// order to be able
-				// to authenticate the client (Use the javax.net.ssl).
-
-				// Create the json body for the request
-				JsonObject jsonReqOM2M = new JsonObject();
-				jsonReqOM2M.addProperty("symmetricKey", Kt);
-				jsonReqOM2M.addProperty("nonce", n);
-				jsonReqOM2M.addProperty("random", c);
-				jsonReqOM2M.addProperty("Texp", notAfter.toString());
-				String reqOM2MBody = gson.toJson(jsonReqOM2M);
-				System.out.println("Send credentials: " + reqOM2MBody);
-
-				// Create the SSLSocketFactory with keystore and truststore
-				httpsRun(reqOM2MBody);
-
-				// Send the ticket back to the client
-				if (response.getStatus() != HttpServletResponse.SC_BAD_REQUEST
-						&& response.getStatus() != HttpServletResponse.SC_UNAUTHORIZED) {
-					response.getWriter().write(respBody);
-					response.setStatus(HttpServletResponse.SC_OK);
-				}
+//				// If the combination reqResName-reqSubType exists, then retrieve the tokenID
+//				// corresponding to
+//				// the clientID as audience in ACCESS_TOKEN
+//				String tokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+//				// If tokenID == null, then we need to retrieve the audience corresponding to
+//				// the requested combination
+//				// of resource name and subscription type from the table ACCESS_TOKEN
+//				if (tokenID == null) {
+//					String audience = retrieveAudienceInACCESS_TOKEN(conn, reqResName, reqSubType);
+//					// If audience == null, then this is the first client interested in the
+//					// requested
+//					// combination of resource name and subscription type in the table ACCESS_TOKEN
+//
+//					// Compute the current date for the access token
+//					java.util.Date date = new java.util.Date();
+//					long now = date.getTime();
+//					java.sql.Date notBefore = new java.sql.Date(now);
+//					System.out.println("SQL start data: " + notBefore.toString());
+//					// Compute the expiration date for the access token
+//					Calendar cal = Calendar.getInstance();
+//					cal.setTime(notBefore);
+//					cal.add(Calendar.DATE, days);
+//					java.sql.Date notAfter = new java.sql.Date(cal.getTimeInMillis());
+//					System.out.println("SQL end data: " + notAfter.toString());
+//					if (audience == null) {
+//						// Check if the client has already a different subscription for the same
+//						// resource name by retrieving
+//						// the tokenID
+//						String alreadySubTokenID = checkClientIDsubscriptionInACCESS_TOKEN(conn, clientID, reqResName);
+//						if (alreadySubTokenID != null) {
+//							// Delete issuer, not_before, not_after, audience corresponding to the retrieved
+//							// tokenID in the
+//							// table ACCESS_TOKEN
+//							deleteFieldsCorrespondingToTokenIDinACCESS_TOKEN(conn, alreadySubTokenID);
+//						}
+//						// Update the record corresponding to the requested resource name and
+//						// subscription type in
+//						// the table ACCESS_TOKEN by setting audience, not_before and note_after.
+//						updateACCESS_TOKENwithNotBeforeNotAfterAudience(conn, notBefore, notAfter, clientID, reqResName,
+//								reqSubType);
+//					} else {
+//						// The requested token is already in use by another client, therefore we need to
+//						// create
+//						// another token in the table ACCESS_TOKEN with different token_id and audience
+//						// parameter.
+//						// Compute the new tokenID to insert in the table ACCESS_TOKEN
+//						Random rnd = new Random();
+//						tokenID = "T" + Integer.toString(rnd.nextInt(0X1000000), 16);
+//						insertACCESS_TOKEN(conn, tokenID, notBefore, notAfter, reqResName, clientID, reqSubType, cost,
+//								days);
+//					}
+//				} else {
+//					// If tokenID != null for the client, then retrieve its expiration date from the
+//					// table ACCESS_TOKEN
+//					// to verify if it is still valid
+//					java.sql.Date expirationDate = retrieveNotAfterFromACCESS_TOKEN(conn, tokenID);
+//					// Compute current date
+//					java.util.Date newDate = new java.util.Date();
+//					long newTime = newDate.getTime();
+//					java.sql.Date currentDate = new java.sql.Date(newTime);
+//					if (currentDate.before(expirationDate)) {
+//						msgInfo = "The client has already an access token for the requested resource"
+//								+ " name and subscription type!!";
+//						/*
+//						 * response.getWriter().
+//						 * write("The client has already an access token for the requested resource" +
+//						 * " name and subscription type!!");
+//						 */
+//					} else {
+//						// Update the record corresponding to the tokenID with the new validity period
+//						// in the table ACCESS_TOKEN.
+//
+//						// Compute the current date for the access token
+//						java.util.Date date = new java.util.Date();
+//						long now = date.getTime();
+//						java.sql.Date notBefore = new java.sql.Date(now);
+//						System.out.println("SQL start data: " + notBefore.toString());
+//						// Compute the expiration date for the access token
+//						Calendar cal = Calendar.getInstance();
+//						cal.setTime(notBefore);
+//						cal.add(Calendar.DATE, days);
+//						java.sql.Date notAfter = new java.sql.Date(cal.getTimeInMillis());
+//						System.out.println("SQL end data: " + notAfter.toString());
+//
+//						updateACCESS_TOKENwithNotBeforeAndNotAfter(conn, tokenID, notBefore, notAfter);
+//					}
+//				}
+//
+//				// Retrieve the tokenID from the table ACCESS_TOKEN
+//				String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+//				// Retrieve the parameter not_after from the table ACCESS_TOKEN
+//				java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
+//				// Generate the key Kt and the Ticket
+//				String[] dataResp = EllipticCurveCryptography.resourceRegistrationResp(clientID, DBtokenID, reqResName)
+//						.split("\\|");
+//				String ticket = dataResp[0];
+//				String Kt = dataResp[1];
+//				String n = dataResp[2];
+//
+//				// Prepare the response with the ticket to be sent to the client
+//				JsonObject jsonRespBody = new JsonObject();
+//				jsonRespBody.addProperty("ticket", ticket);
+//				if (msgInfo != null) {
+//					jsonRespBody.addProperty("message", msgInfo);
+//				}
+//				Gson gson = new GsonBuilder().create();
+//				String respBody = gson.toJson(jsonRespBody);
+//
+//				System.out.println("Response body: " + respBody);
+//
+//				// Prepare the https request to send security credentials to the OM2M IPE in
+//				// order to be able
+//				// to authenticate the client (Use the javax.net.ssl).
+//
+//				// Create the json body for the request
+//				JsonObject jsonReqOM2M = new JsonObject();
+//				jsonReqOM2M.addProperty("symmetricKey", Kt);
+//				jsonReqOM2M.addProperty("nonce", n);
+//				jsonReqOM2M.addProperty("random", c);
+//				jsonReqOM2M.addProperty("Texp", notAfter.toString());
+//				String reqOM2MBody = gson.toJson(jsonReqOM2M);
+//				System.out.println("Send credentials: " + reqOM2MBody);
+//
+//				// Create the SSLSocketFactory with keystore and truststore
+//				httpsRun(reqOM2MBody);
+//
+//				// Send the ticket back to the client
+//				if (response.getStatus() != HttpServletResponse.SC_BAD_REQUEST
+//						&& response.getStatus() != HttpServletResponse.SC_UNAUTHORIZED) {
+//					response.getWriter().write(respBody);
+//					response.setStatus(HttpServletResponse.SC_OK);
+//				}
 			}
 		}
 	}
