@@ -2,6 +2,9 @@ package thirdPartyServer.util;
 
 public class ServerConstants {
 
+	// Key Ks
+	public static final String Ks = "taokhoaks123456789";
+	
 	// The size of all the random number used in the cryptographic system
 	public static final int randomNumberSize = 32;
 	
