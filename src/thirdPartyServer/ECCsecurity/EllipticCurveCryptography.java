@@ -375,20 +375,20 @@ public class EllipticCurveCryptography {
 		/*
 		 * Compute the key Ks
 		 */
-		X9ECParameters ecp = SECNamedCurves.getByName("secp256r1");
-		ECDomainParameters domainParams = new ECDomainParameters(ecp.getCurve(), ecp.getG(), ecp.getN(), ecp.getH(),
-				ecp.getSeed());
-		/* Generate a random number with a fixed size of 32 bytes */
-		SecureRandom random = new SecureRandom();
-		resRegRandomR = new byte[ServerConstants.randomNumberSize];
-		random.nextBytes(resRegRandomR); // Fill the array with random bytes
-		System.out.println("R = " + toHex(resRegRandomR));
-
-		/* Elliptic curve multiplication using the random number */
-		ECPoint pointR = domainParams.getG().multiply(new BigInteger(resRegRandomR));
-		byte[] SecretpointR = pointR.getEncoded(true);
-		byte[] Ks = sha256(SecretpointR);
-		System.out.println("Symmetric key Ks: " + toHex(Ks));
+//		X9ECParameters ecp = SECNamedCurves.getByName("secp256r1");
+//		ECDomainParameters domainParams = new ECDomainParameters(ecp.getCurve(), ecp.getG(), ecp.getN(), ecp.getH(),
+//				ecp.getSeed());
+//		/* Generate a random number with a fixed size of 32 bytes */
+//		SecureRandom random = new SecureRandom();
+//		resRegRandomR = new byte[ServerConstants.randomNumberSize];
+//		random.nextBytes(resRegRandomR); // Fill the array with random bytes
+//		System.out.println("R = " + toHex(resRegRandomR));
+//
+//		/* Elliptic curve multiplication using the random number */
+//		ECPoint pointR = domainParams.getG().multiply(new BigInteger(resRegRandomR));
+//		byte[] SecretpointR = pointR.getEncoded(true);
+//		byte[] Ks = sha256(SecretpointR);
+		System.out.println("Symmetric key Ks: " + toHex(ServerConstants.Ks));
 
 //		// Generate a random number
 //		SecureRandom random = new SecureRandom(); 
@@ -403,6 +403,9 @@ public class EllipticCurveCryptography {
 //		byte[] Qu = sha256(secretTimestampConcat);
 //
 //		System.out.println("Qu: " + toHex(Qu));
+		
+		byte[] Ks = hexStringToByteArray(ServerConstants.Ks);
+		
 		byte[] clientIDBytes = hexStringToByteArray(clientID);
 		// Concatenate the identity with the random number generated during resource
 		// registration
@@ -418,14 +421,15 @@ public class EllipticCurveCryptography {
 
 		// Compute the Ticket for the client
 		// Generate a nonce (12 bytes) to be used for AES_256_CCM_8
+		SecureRandom random = new SecureRandom();
 		random = new SecureRandom();
-		byte[] n = new byte[ServerConstants.nonceSize];
-		random.nextBytes(n); // Fill the nonce with random bytes
-		System.out.println("nonce1 = " + toHex(n));
+		byte[] n1 = new byte[ServerConstants.nonceSize];
+		random.nextBytes(n1); // Fill the nonce with random bytes
+		System.out.println("nonce1 = " + toHex(n1));
 
 		// Encrypt the Ticket use Kt
 		CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
-		ccm.init(true, new ParametersWithIV(new KeyParameter(Kt), n));
+		ccm.init(true, new ParametersWithIV(new KeyParameter(Kt), n1));
 		byte[] ticket = new byte[tokenIDResConcat.length + 8];
 		int len = ccm.processBytes(tokenIDResConcat, 0, tokenIDResConcat.length, ticket, 0);
 		try {
@@ -468,7 +472,7 @@ public class EllipticCurveCryptography {
 
 		System.out.println("ET: " + toHex(ET));
 
-		return toHex(ET) + "|" + toHex(Kt) + "|" + toHex(n) + "|" + toHex(n2);
+		return toHex(ET) + "|" + toHex(Kt) + "|" + toHex(n1) + "|" + toHex(n2);
 	}
 
 	public static String createSessionKey(String clientID, String timestamp) {

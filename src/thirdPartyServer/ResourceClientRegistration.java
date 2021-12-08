@@ -299,13 +299,14 @@ public class ResourceClientRegistration extends HttpServlet {
 							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp).split("\\|");
 					String ET = dataResp[0];
 					String Kt = dataResp[1];
-					String n = dataResp[2];
+					String n1 = dataResp[2];
 					String n2 = dataResp[3];
 
 					// Prepare the response with the ticket to be sent to the client
 					JsonObject jsonRespBody = new JsonObject();
 					jsonRespBody.addProperty("ET", ET);
 					jsonRespBody.addProperty("nonce2", n2);
+					jsonRespBody.addProperty("nonce1", n1);
 					if (msgInfo != null) {
 						jsonRespBody.addProperty("message", msgInfo);
 					}
@@ -321,7 +322,7 @@ public class ResourceClientRegistration extends HttpServlet {
 					// Create the json body for the request
 					JsonObject jsonReqOM2M = new JsonObject();
 					jsonReqOM2M.addProperty("symmetricKey", Kt);
-					jsonReqOM2M.addProperty("nonce", n);
+					jsonReqOM2M.addProperty("nonce1", n1);
 					jsonReqOM2M.addProperty("random", c);
 					jsonReqOM2M.addProperty("Texp", notAfter.toString());
 					String reqOM2MBody = gson.toJson(jsonReqOM2M);
