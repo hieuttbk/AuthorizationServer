@@ -326,7 +326,7 @@ public class EllipticCurveCryptography {
 		// Retrieve the application data (resource name and type of subscription)
 
 		// int appDataByteLength = cleartext.length - ServerConstants.randomNumberSize;
-		//int appDataByteLength = cleartext.length;
+		// int appDataByteLength = cleartext.length;
 //		String appData = toHex(cleartext).substring(0, 2 * appDataByteLength); // dang hex co 2 gia tri
 //		appData = convertHexToString(appData);
 		String appData = convertHexToString(toHex(cleartext));
@@ -354,13 +354,14 @@ public class EllipticCurveCryptography {
 		// return appData;
 	}
 
-	public static String resourceRegistrationResp(String clientID, String tokenID, String resName, String c,
-			String Kr,String Texp) {
+	public static String resourceRegistrationResp(String clientID, String tokenID, String resName, String c, String Kr,
+			String Texp) {
 		// Convert the tokenID and resource name in its hexadecimal notation using the
 		// ascii standard
+		//Texp = "a";
 		byte[] tokenIDbytes = hexStringToByteArray(toHex(tokenID));
 		byte[] resNamebytes = hexStringToByteArray(toHex(resName));
-
+		System.out.println("texp: " + Texp);
 		// Concatenate the tokenID with the resource name (e.g. temperature)
 		// TokenID||Rn||Texp
 		String sepSymb = "||";
@@ -370,6 +371,7 @@ public class EllipticCurveCryptography {
 		tokenIDResConcat = concatByteArrays(tokenIDResConcat, resNamebytes);
 		tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
 		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(Texp)));
+		System.out.println("Encode " + toHex(tokenIDResConcat));
 		/*
 		 * Compute the key Ks
 		 */
@@ -443,10 +445,11 @@ public class EllipticCurveCryptography {
 		random.nextBytes(n2); // Fill the nonce with random bytes
 		System.out.println("nonce2 = " + toHex(n2));
 		System.out.println("Texp = " + Texp);
-        
+
 		String Ticket = toHex(ticket);
-		// Tai sao phai doi sang String: Vi tach ban tin se dung split(chi dung tren String) 
-		//nen Ticket phai dua ve String sau do dua ve ByteArray
+		// Tai sao phai doi sang String: Vi tach ban tin se dung split(chi dung tren
+		// String)
+		// nen Ticket phai dua ve String sau do dua ve ByteArray
 		byte[] ticketTexp = concatByteArrays(hexStringToByteArray(toHex(Ticket)), hexStringToByteArray(toHex(sepSymb)));
 		ticketTexp = concatByteArrays(ticketTexp, hexStringToByteArray(Texp));
 		CCMBlockCipher ccm1 = new CCMBlockCipher(new AESEngine());

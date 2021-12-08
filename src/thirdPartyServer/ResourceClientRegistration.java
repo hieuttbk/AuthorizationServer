@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,6 +58,21 @@ public class ResourceClientRegistration extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
+	private static String toHex(byte[] data) {
+		StringBuilder sb = new StringBuilder();
+		for (byte b : data) {
+			sb.append(String.format("%02x", b & 0xff));
+		}
+		return sb.toString();
+	}
+
+	private static byte[] longToByteArray(long value) {
+		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+		buffer.putLong(value);
+		return buffer.array();
+
+	}
+
 	public ResourceClientRegistration() {
 		super();
 		// TODO Auto-generated constructor stub
@@ -270,12 +286,14 @@ public class ResourceClientRegistration extends HttpServlet {
 
 					// Retrieve the tokenID from the table ACCESS_TOKEN
 					String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
-					String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
-					
-					
+					// String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName,
+					// reqSubType);
 
 					// Retrieve the parameter not_after from the table ACCESS_TOKEN
 					java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
+					// String Texp= notAfter.toString();
+
+					String Texp = notAfter.toString();
 					// Generate the key Kt and the Ticket
 					String[] dataResp = EllipticCurveCryptography
 							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp).split("\\|");
