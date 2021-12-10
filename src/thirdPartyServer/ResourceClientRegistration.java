@@ -175,6 +175,7 @@ public class ResourceClientRegistration extends HttpServlet {
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			} else {
 				// check If Kr respone == kr DAS created
+				System.out.println("\n >>>>>>> Process 6.9 check Kr = H(k*Pu||Tr) .....");
 				String KrByDAS = EllipticCurveCryptography.CreatedKr(clientID, Tr);
 				if (Kr.equals(KrByDAS)) {
 					System.out.println("Check Kr is succesful! ");
@@ -270,12 +271,14 @@ public class ResourceClientRegistration extends HttpServlet {
 
 					// Retrieve the tokenID from the table ACCESS_TOKEN
 					String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
-					String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					//String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
 					
 					
 
 					// Retrieve the parameter not_after from the table ACCESS_TOKEN
 					java.sql.Date notAfter = retrieveNotAfterFromACCESS_TOKEN(conn, DBtokenID);
+					
+					String Texp = notAfter.toString();
 					// Generate the key Kt and the Ticket
 					String[] dataResp = EllipticCurveCryptography
 							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp).split("\\|");

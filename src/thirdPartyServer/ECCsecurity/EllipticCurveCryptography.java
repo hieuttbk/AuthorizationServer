@@ -163,19 +163,21 @@ public class EllipticCurveCryptography {
 	}
 
 	public static String ECQVRegistration(String clientID, String stringHexEncodedU) {
+		System.out.println("\n >>>>>>> Process 5.3 to 5.7 created a,A,cert_U, qu,Pu .....");
 		byte[] clientIDbytes = hexStringToByteArray(clientID);
 		// Get domain parameters for example curve secp256r1
 		X9ECParameters ecp = SECNamedCurves.getByName("secp256r1");
 		ECDomainParameters domainParams = new ECDomainParameters(ecp.getCurve(), ecp.getG(), ecp.getN(), ecp.getH(),
 				ecp.getSeed());
+		System.out.println("\n >>>>>>> Process 5.3 created a .....");
 		SecureRandom random = new SecureRandom();
 		byte[] a = new byte[ServerConstants.randomNumberSize]; // Create a byte array with a size of 32 bytes
 		random.nextBytes(a); // Fill the array with random bytes
 		// add
 		System.out.println("a = " + toHex(a));
+
+		System.out.println("\n >>>>>>> Process 5.4 created A=a.G .....");
 		ECPoint pointA = domainParams.getG().multiply(new BigInteger(a));
-		// add
-		// System.out.println("A = " + toHex(pointA));
 
 		/* Decode the received encoded U to obtain the point U */
 		byte[] encodedU = hexStringToByteArray(stringHexEncodedU);
@@ -185,11 +187,18 @@ public class EllipticCurveCryptography {
 		 * Compute the client certificate with the elliptic curve point addition
 		 * operation
 		 */
+		System.out.println("\n >>>>>>> Process 5.5 created cert_u .....");
 		ECPoint cert_u = pointU.add(pointA);
 		byte[] encodedCert_u = cert_u.getEncoded(true);
 		System.out.println("user certificate =" + toHex(encodedCert_u));
 
+		// Compute the q parameter
+		System.out.println("\n >>>>>>> Process 5.6 created qu=H(cert_u||IDu)a + k  .....");
+		BigInteger qUser = computeUserq(clientIDbytes, encodedCert_u, new BigInteger(a));
+		System.out.println("qUser = " + toHex(qUser.toByteArray()));
+
 		/* Encode the public key that needs to be sent over the http channel */
+		System.out.println("\n >>>>>>> Process 5.7 created Pu=H(cert_u||IDu)cert_u + PDAS  .....");
 		byte[] pubKeyBytes = publicKey.getQ().getEncoded(true);
 
 		// Calculates the public key of the client and put it in the hashmap
@@ -204,11 +213,6 @@ public class EllipticCurveCryptography {
 		// Public key of the client
 		ECPublicKeyParameters pubKeyClient = new ECPublicKeyParameters(pubKeyClientPoint, domainParams);
 		clientsPublicKeys.put(clientID, pubKeyClient);
-
-		// Compute the q parameter
-		BigInteger qUser = computeUserq(clientIDbytes, encodedCert_u, new BigInteger(a));
-
-		System.out.println("qUser = " + toHex(qUser.toByteArray()));
 
 		return toHex(encodedCert_u) + "|" + toHex(qUser.toByteArray()) + "|" + toHex(pubKeyBytes);
 	}
@@ -280,6 +284,7 @@ public class EllipticCurveCryptography {
 	}
 
 	public static String resourceRegistrationReq(String timestamp, String ciphertext, String nonce, String encodeZ) {
+		System.out.println("\n >>>>>>> Process 6.7 to 6.8 created Kz, D_Kz(Sub) .....");
 		byte[] cleartext = null;
 		byte[] ciphertextBytes = hexStringToByteArray(ciphertext);
 
@@ -289,6 +294,7 @@ public class EllipticCurveCryptography {
 		/* Elliptic curve multiplication */
 
 		/* Decode the received encoded Z to obtain the point Z */
+		System.out.println("\n >>>>>>> Process 6.7 created Kz = H(k*Z||Tr) .....");
 		byte[] Z = hexStringToByteArray(encodeZ);
 		ECPoint pointZ = ecp.getCurve().decodePoint(Z);
 
@@ -300,6 +306,7 @@ public class EllipticCurveCryptography {
 		byte[] Kz = sha256(secretTimestampEncoded);
 		System.out.println("Symmetric key Kz: " + toHex(Kz));
 
+		System.out.println("\n >>>>>>> Process 6.8 Decrypt D_Kz(Sub)=> Rn, Type, c, IDu, Kr .....");
 		System.out.println("Nonce: " + nonce);
 		// Decrypt the cipher text to obtain the application specific request of the
 		// client
@@ -326,7 +333,7 @@ public class EllipticCurveCryptography {
 		// Retrieve the application data (resource name and type of subscription)
 
 		// int appDataByteLength = cleartext.length - ServerConstants.randomNumberSize;
-		//int appDataByteLength = cleartext.length;
+		// int appDataByteLength = cleartext.length;
 //		String appData = toHex(cleartext).substring(0, 2 * appDataByteLength); // dang hex co 2 gia tri
 //		appData = convertHexToString(appData);
 		String appData = convertHexToString(toHex(cleartext));
@@ -354,22 +361,12 @@ public class EllipticCurveCryptography {
 		// return appData;
 	}
 
-	public static String resourceRegistrationResp(String clientID, String tokenID, String resName, String c,
-			String Kr,String Texp) {
+	public static String resourceRegistrationResp(String clientID, String tokenID, String resName, String c, String Kr,
+			String Texp) {
 		// Convert the tokenID and resource name in its hexadecimal notation using the
 		// ascii standard
-		byte[] tokenIDbytes = hexStringToByteArray(toHex(tokenID));
-		byte[] resNamebytes = hexStringToByteArray(toHex(resName));
 
-		// Concatenate the tokenID with the resource name (e.g. temperature)
-		// TokenID||Rn||Texp
-		String sepSymb = "||";
-		// Add separation symbol to tokenID
-		byte[] tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
-		// Add type of resource name
-		tokenIDResConcat = concatByteArrays(tokenIDResConcat, resNamebytes);
-		tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
-		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(Texp)));
+		System.out.println("\n >>>>>>> Process 6.10 to 6.13 created Qu, Kt, Ticket, ET .....");
 		/*
 		 * Compute the key Ks
 		 */
@@ -401,18 +398,20 @@ public class EllipticCurveCryptography {
 //		byte[] Qu = sha256(secretTimestampConcat);
 //
 //		System.out.println("Qu: " + toHex(Qu));
-		
+
 		byte[] Ks = hexStringToByteArray(ServerConstants.Ks);
-		
+
 		byte[] clientIDBytes = hexStringToByteArray(clientID);
 		// Concatenate the identity with the random number generated during resource
 		// registration
+		System.out.println("\n >>>>>>> Process 6.10 created Qu = H(IDu||c) .....");
 		byte[] IDresRegRandomConcat = concatByteArrays(clientIDBytes, hexStringToByteArray(c));
 		// Do the sha256 of the concatenation
 		byte[] Qu = sha256(IDresRegRandomConcat);
 		System.out.println("Qu: " + toHex(Qu));
 
 		// Compute the key Kt = H(Qu||Ks)
+		System.out.println("\n >>>>>>> Process 6.11 created Kt = H(Qu||Ks) .....");
 		byte[] IDprivRandConcat = concatByteArrays(Qu, Ks);
 		byte[] Kt = sha256(IDprivRandConcat);
 		System.out.println("Kt :" + toHex(Kt));
@@ -426,6 +425,24 @@ public class EllipticCurveCryptography {
 		System.out.println("nonce1 = " + toHex(n1));
 
 		// Encrypt the Ticket use Kt
+		System.out.println("\n >>>>>>> Process 6.12 Encrypt Ticket = E_Kt(TokenID||Rn||Texp) .....");
+
+		byte[] tokenIDbytes = hexStringToByteArray(toHex(tokenID));
+		byte[] resNamebytes = hexStringToByteArray(toHex(resName));
+
+		// Concatenate the tokenID with the resource name (e.g. temperature)
+		// TokenID||Rn||Texp
+		String sepSymb = "||";
+		// Add separation symbol to tokenID
+		byte[] tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
+		// Add type of resource name
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, resNamebytes);
+		// Add Texp
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(sepSymb)));
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(Texp)));
+		
+		System.out.println("Ticket before Encrypt: "+ convertHexToString(toHex(tokenIDResConcat)));
+		
 		CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
 		ccm.init(true, new ParametersWithIV(new KeyParameter(Kt), n1));
 		byte[] ticket = new byte[tokenIDResConcat.length + 8];
@@ -447,12 +464,14 @@ public class EllipticCurveCryptography {
 		random.nextBytes(n2); // Fill the nonce with random bytes
 		System.out.println("nonce2 = " + toHex(n2));
 		System.out.println("Texp = " + Texp);
-        
+
 		String Ticket = toHex(ticket);
-		// Tai sao phai doi sang String: Vi tach ban tin se dung split(chi dung tren String) 
-		//nen Ticket phai dua ve String sau do dua ve ByteArray
+		// Tai sao phai doi sang String: Vi tach ban tin se dung split(chi dung tren
+		// String)
+		// nen Ticket phai dua ve String sau do dua ve ByteArray
+		System.out.println("\n >>>>>>> Process 6.13 created ET = E_Kr(Ticket||Texp) .....");
 		byte[] ticketTexp = concatByteArrays(hexStringToByteArray(toHex(Ticket)), hexStringToByteArray(toHex(sepSymb)));
-		ticketTexp = concatByteArrays(ticketTexp, hexStringToByteArray(Texp));
+		ticketTexp = concatByteArrays(ticketTexp, hexStringToByteArray(toHex(Texp)));
 		CCMBlockCipher ccm1 = new CCMBlockCipher(new AESEngine());
 		ccm1.init(true, new ParametersWithIV(new KeyParameter(hexStringToByteArray(Kr)), n2));
 		byte[] ET = new byte[ticketTexp.length + 8];
@@ -475,6 +494,8 @@ public class EllipticCurveCryptography {
 	public static String createSessionKey(String clientID, String timestamp) {
 		// Compute the symmetric session key SKsession = H(k*Pu||Ts)
 		// Elliptic curve multiplication
+		System.out.println("\n >>>>>>> Process 7.6 created SK = H(k*Pu||Ts) .....");
+		//System.out.println("timeStamp DAS: "+timestamp);
 		ECPublicKeyParameters pubKeyClient = clientsPublicKeys.get(clientID);
 		ECPoint secretPoint = pubKeyClient.getQ().multiply(privateKey.getD());
 		byte[] encodedSecretPoint = secretPoint.getEncoded(true);

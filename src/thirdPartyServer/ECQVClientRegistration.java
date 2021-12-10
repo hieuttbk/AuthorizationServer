@@ -109,6 +109,7 @@ public class ECQVClientRegistration extends HttpServlet {
 	    System.out.println("Public key: " + pubKey);
 	    
 	    /* Check if the client identifier is already present in the CLIENTS table */
+	    System.out.println("\n >>>>>>> Process 5.8 store IDu, qu .....");
 	    boolean exist = false;
 	    Statement stmt;
 	    String sql1 = "SELECT client_id FROM CLIENTS";
