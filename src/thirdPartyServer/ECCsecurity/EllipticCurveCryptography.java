@@ -365,8 +365,25 @@ public class EllipticCurveCryptography {
 			String Texp) {
 		// Convert the tokenID and resource name in its hexadecimal notation using the
 		// ascii standard
+<<<<<<< HEAD
 
 		System.out.println("\n >>>>>>> Process 6.10 to 6.13 created Qu, Kt, Ticket, ET .....");
+=======
+		//Texp = "a";
+		byte[] tokenIDbytes = hexStringToByteArray(toHex(tokenID));
+		byte[] resNamebytes = hexStringToByteArray(toHex(resName));
+		System.out.println("texp: " + Texp);
+		// Concatenate the tokenID with the resource name (e.g. temperature)
+		// TokenID||Rn||Texp
+		String sepSymb = "||";
+		// Add separation symbol to tokenID
+		byte[] tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
+		// Add type of resource name
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, resNamebytes);
+		tokenIDResConcat = concatByteArrays(tokenIDbytes, hexStringToByteArray(toHex(sepSymb)));
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(Texp)));
+		System.out.println("Encode " + toHex(tokenIDResConcat));
+>>>>>>> 921d999a3107cb57eb544c7b0b4e5d609026e439
 		/*
 		 * Compute the key Ks
 		 */
@@ -469,7 +486,10 @@ public class EllipticCurveCryptography {
 		// Tai sao phai doi sang String: Vi tach ban tin se dung split(chi dung tren
 		// String)
 		// nen Ticket phai dua ve String sau do dua ve ByteArray
+<<<<<<< HEAD
 		System.out.println("\n >>>>>>> Process 6.13 created ET = E_Kr(Ticket||Texp) .....");
+=======
+>>>>>>> 921d999a3107cb57eb544c7b0b4e5d609026e439
 		byte[] ticketTexp = concatByteArrays(hexStringToByteArray(toHex(Ticket)), hexStringToByteArray(toHex(sepSymb)));
 		ticketTexp = concatByteArrays(ticketTexp, hexStringToByteArray(toHex(Texp)));
 		CCMBlockCipher ccm1 = new CCMBlockCipher(new AESEngine());
