@@ -362,7 +362,7 @@ public class EllipticCurveCryptography {
 	}
 
 	public static String resourceRegistrationResp(String clientID, String tokenID, String resName, String c, String Kr,
-			String Texp) {
+			String Texp,String DBpermission) {
 		// Convert the tokenID and resource name in its hexadecimal notation using the
 		// ascii standard
 
@@ -454,8 +454,13 @@ public class EllipticCurveCryptography {
 		// Add type of resource name
 		tokenIDResConcat = concatByteArrays(tokenIDResConcat, resNamebytes);
 		// Add Texp
+		System.out.println(" DBpermission: "+ DBpermission);
+		System.out.println(" DBpermission: "+ toHex(DBpermission));
 		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(sepSymb)));
 		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(Texp)));
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(sepSymb)));
+		tokenIDResConcat = concatByteArrays(tokenIDResConcat, hexStringToByteArray(toHex(DBpermission)));
+		
 		
 		System.out.println("Ticket before Encrypt: "+ convertHexToString(toHex(tokenIDResConcat)));
 		

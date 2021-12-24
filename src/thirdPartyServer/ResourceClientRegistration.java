@@ -287,6 +287,9 @@ public class ResourceClientRegistration extends HttpServlet {
 
 					// Retrieve the tokenID from the table ACCESS_TOKEN
 					String DBtokenID = retrieveTokenIDinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
+					
+					// Retrieve the permission from the table ACCESS_TOKEN
+					String DBpermission = retrievePermisioninACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
 					//String Texp= retrieveTexpinACCESS_TOKEN(conn, clientID, reqResName, reqSubType);
 					
 					
@@ -303,8 +306,7 @@ public class ResourceClientRegistration extends HttpServlet {
 
 					String Texp = notAfter.toString();
 					// Generate the key Kt and the Ticket
-					String[] dataResp = EllipticCurveCryptography
-							.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp).split("\\|");
+					String[] dataResp = EllipticCurveCryptography.resourceRegistrationResp(clientID, DBtokenID, reqResName, c, Kr, Texp,DBpermission).split("\\|");
 					String ET = dataResp[0];
 					String Kt = dataResp[1];
 					String n1 = dataResp[2];
@@ -633,6 +635,30 @@ public class ResourceClientRegistration extends HttpServlet {
 			e1.printStackTrace();
 		}
 		return tokenID;
+	}
+	// Retrieve Permission
+	public String retrievePermisioninACCESS_TOKEN(Connection conn, String clientID, String reqResName,
+			String reqSubType) {
+		String permission = null;
+		// String Texp = null;
+		System.out.println("Retrieving Permission corresponding to clientID and requested resource name and subscription"
+				+ " type from the table ACCESS_TOKEN...");
+		String sql = "SELECT permission FROM ACCESS_TOKEN WHERE token_name = ? AND audience = ? AND sub_type = ?";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, reqResName);
+			pstmt.setString(2, clientID);
+			pstmt.setString(3, reqSubType);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				permission = rs.getString("permission");
+				// Texp=rs.getString("validity_interval");
+			}
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		return permission;
 	}
 
 	public String retrieveTexpinACCESS_TOKEN(Connection conn, String clientID, String reqResName, String reqSubType) {
