@@ -610,7 +610,7 @@ public class ResourceClientRegistration extends HttpServlet {
 		}
 		return combExist;
 	}
-
+	
 	// Retrieve tokenID corresponding to reqResName, reqSubType and clientID in the
 	// table ACCESS_TOKEN
 	public String retrieveTokenIDinACCESS_TOKEN(Connection conn, String clientID, String reqResName,
@@ -641,8 +641,7 @@ public class ResourceClientRegistration extends HttpServlet {
 			String reqSubType) {
 		String permission = null;
 		// String Texp = null;
-		System.out.println("Retrieving Permission corresponding to clientID and requested resource name and subscription"
-				+ " type from the table ACCESS_TOKEN...");
+		System.out.println("Retrieving Permission corresponding to clientID and requested resource name and subscription"+ " type from the table ACCESS_TOKEN...");
 		String sql = "SELECT permission FROM ACCESS_TOKEN WHERE token_name = ? AND audience = ? AND sub_type = ?";
 		try {
 			PreparedStatement pstmt = conn.prepareStatement(sql);
