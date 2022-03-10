@@ -117,15 +117,17 @@ public class ResourceClientRegistration extends HttpServlet {
 		String sub = jsonReqBody.get("subscription").getAsString();
 		String nonce = jsonReqBody.get("nonce").getAsString();
 		String encodeZ = jsonReqBody.get("encodeZ").getAsString();
+		String encryptedText = jsonReqBody.get("encryptedText").getAsString();
 
 		// System.out.println("Client ID: " + clientID);
 		System.out.println("Timestamp Tr: " + Tr);
 		System.out.println("Subscription: " + sub);
 		System.out.println("Nonce: " + nonce);
 		System.out.println("EncodeZ: " + encodeZ);
+		System.out.println("Encryptedtext " +  encryptedText);
 
 		// Decrypt the application specific data and the random number c
-		String[] dataReq = EllipticCurveCryptography.resourceRegistrationReq(Tr, sub, nonce, encodeZ).split("\\|");
+		String[] dataReq = EllipticCurveCryptography.resourceRegistrationReq(Tr, sub, nonce, encodeZ, encryptedText).split("\\|");
 
 		String reqResName = dataReq[0];
 		String reqSubType = dataReq[1];

@@ -283,7 +283,7 @@ public class EllipticCurveCryptography {
 		return toHex(Kr);
 	}
 
-	public static String resourceRegistrationReq(String timestamp, String ciphertext, String nonce, String encodeZ) {
+	public static String resourceRegistrationReq(String timestamp, String ciphertext, String nonce, String encodeZ, String encryptedText) {
 		System.out.println("\n >>>>>>> Process 6.7 to 6.8 created Kz, D_Kz(Sub) .....");
 		byte[] cleartext = null;
 		byte[] ciphertextBytes = hexStringToByteArray(ciphertext);
@@ -308,6 +308,10 @@ public class EllipticCurveCryptography {
 
 		System.out.println("\n >>>>>>> Process 6.8 Decrypt D_Kz(Sub)=> Rn, Type, c, IDu, Kr .....");
 		System.out.println("Nonce: " + nonce);
+		
+        String decryptedText = AesGcm256.decrypt
+                (encryptedText, Kz, AesGcm256.HexToByte(nonce));
+          System.out.println("Decrypted base64 encoded: " +decryptedText);	
 		// Decrypt the cipher text to obtain the application specific request of the
 		// client
 		CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
@@ -318,7 +322,7 @@ public class EllipticCurveCryptography {
 			len += ccm.doFinal(tmp, len);
 			cleartext = new byte[len];
 			System.arraycopy(tmp, 0, cleartext, 0, len);
-			System.out.println("Cleartext: " + toHex(cleartext));
+			System.out.println("Cleartext111: " + toHex(cleartext));
 		} catch (IllegalStateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
